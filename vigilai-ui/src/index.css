@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* VigilAI Monochrome Design System - Pure Black & White */
+
+@layer base {
+  :root {
+    /* Pure monochrome palette */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* Primary: Black buttons, white text */
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: White with black border */
+    --secondary: 0 0% 100%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Muted: Light gray for disabled states */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+
+    /* Accent: Inverted for highlights */
+    --accent: 0 0% 0%;
+    --accent-foreground: 0 0% 100%;
+
+    /* System states */
+    --success: 0 0% 0%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 0 0% 0%;
+    --warning-foreground: 0 0% 100%;
+    
+    --destructive: 0 0% 0%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 0 0% 0%;
+    --input: 0 0% 100%;
+    --input-border: 0 0% 0%;
+    --ring: 0 0% 0%;
+
+    /* Minimal radius for clean edges */
+    --radius: 0.25rem;
+
+    /* Sidebar styling */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 0 0% 0%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 0%;
+    --sidebar-ring: 0 0% 0%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-mono antialiased;
+  }
+
+  /* Custom typography classes */
+  .font-display {
+    font-family: 'Inter', 'system-ui', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  .font-mono-data {
+    font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* Status indicators */
+  .status-idle {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .status-active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .status-error {
+    @apply bg-destructive text-destructive-foreground;
+  }
+
+  /* Camera stream styling */
+  .camera-stream {
+    @apply border-2 border-border bg-muted aspect-video;
+  }
+
+  /* Log display */
+  .log-container {
+    @apply bg-background border border-border p-4 rounded font-mono-data text-sm;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* Control panels */
+  .control-panel {
+    @apply bg-background border border-border p-6 rounded space-y-4;
+  }
+}

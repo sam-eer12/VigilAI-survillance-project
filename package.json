@@ -1,0 +1,14 @@
+{
+  "name": "vigilai-survillance-project",
+  "version": "1.0.0",
+  "description": "A comprehensive surveillance system using YOLOv11 for object detection with live camera feed capabilities.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cd vigilai-ui && npm run dev",
+    "backend": "python flask_api.py"
+
+  },
+  "author": "",
+  "license": "ISC"
+}
