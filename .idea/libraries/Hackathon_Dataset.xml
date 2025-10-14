@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Hackathon_Dataset">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/Hackathon_Dataset.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
