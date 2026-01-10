@@ -533,4 +533,4 @@ if __name__ == '__main__':
     add_log("VigilAI Flask API Server starting...")
     add_log("System initialized and ready for operations")
     add_log("API endpoints available: /api/status, /api/logs, /api/train, /api/detect/*, /api/evaluate, /api/models")
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=5431, debug=True, threaded=True)

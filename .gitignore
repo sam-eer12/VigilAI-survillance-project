@@ -5,4 +5,8 @@ HackByte_Dataset/
 HackByte_Dataset.zip
 Hackathon_Dataset.zip
 
+.vscode/
+
+venv/
+
 __pycache__/
