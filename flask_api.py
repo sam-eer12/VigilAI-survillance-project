@@ -12,10 +12,8 @@ from vigilai import VigilAI
 app = Flask(__name__)
 CORS(app)
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Global variables
 vigilai_instance = None
 detection_thread = None
 training_thread = None
@@ -24,7 +22,7 @@ system_logs = []
 system_status = "Idle"
 detection_running = False
 camera_feed = None
-latest_frame = None  # JPEG-encoded latest annotated frame bytes
+latest_frame = None  
 video_capture = None
 
 def add_log(message, level="INFO"):
@@ -36,7 +34,6 @@ def add_log(message, level="INFO"):
         "message": message
     }
     system_logs.append(log_entry)
-    # Keep only last 100 logs
     if len(system_logs) > 100:
         system_logs.pop(0)
     print(f"[{timestamp}] {level}: {message}")
@@ -72,7 +69,7 @@ def start_training():
     batch_size = data.get('batch_size', 16)
     img_size = data.get('img_size', 416)
     model_size = data.get('model_size', 'm')
-    training_type = data.get('training_type', 'standard')  # 'standard' or 'combined'
+    training_type = data.get('training_type', 'standard') 
     
     def train_model():
         global system_status
@@ -83,12 +80,10 @@ def start_training():
                 add_log(f"Starting COMBINED training: epochs={epochs}, batch={batch_size}, img_size={img_size}, model_size={model_size}")
                 add_log("Training on all three datasets: HackByte + FireSmoke + Violence Detection")
                 
-                # Check if datasets are available
                 vigilai_instance = VigilAI(model_size=model_size)
                 if not vigilai_instance.check_datasets_available():
                     add_log("Warning: Some datasets missing, but continuing with available data", "WARNING")
                 
-                # Use the combined training approach
                 from train_combined_model import CombinedDatasetTrainer
                 
                 trainer = CombinedDatasetTrainer()
@@ -111,7 +106,6 @@ def start_training():
                     add_log("Combined training failed!", "ERROR")
                     
             else:
-                # Standard training on HackByte dataset only
                 add_log(f"Starting STANDARD training: epochs={epochs}, batch={batch_size}, img_size={img_size}, model_size={model_size}")
                 add_log("Training on HackByte dataset only")
                 
@@ -164,7 +158,6 @@ def start_detection():
             if model_path:
                 vigilai_instance.model_path = model_path
             
-            # Find latest model if no path specified
             if not model_path:
                 from pathlib import Path
                 runs_dir = Path('runs/train')
@@ -175,7 +168,6 @@ def start_detection():
                         vigilai_instance.model_path = str(latest_run / 'weights' / 'best.pt')
             
             if vigilai_instance.load_model():
-                # Initialize camera
                 video_capture = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
                 if not video_capture.isOpened():
                     add_log(f"Error: Could not open camera {camera_index}", "ERROR")
@@ -183,7 +175,6 @@ def start_detection():
 
                 add_log("Camera opened successfully. Streaming frames...")
 
-                # Try to set target FPS to 60
                 try:
                     video_capture.set(cv2.CAP_PROP_FPS, 60)
                 except Exception:
@@ -198,17 +189,14 @@ def start_detection():
                         add_log("Error: Could not read frame from camera", "ERROR")
                         break
 
-                    # Run detection and annotate
                     annotated_frame, _ = vigilai_instance.detect_objects(frame, conf_threshold)
 
-                    # Encode as JPEG
                     ok, buffer = cv2.imencode('.jpg', annotated_frame)
                     if ok:
                         latest_frame = buffer.tobytes()
                     else:
                         add_log("Warning: Failed to encode frame", "WARNING")
 
-                    # Pace loop to target ~60 FPS
                     elapsed = time.perf_counter() - loop_start
                     remaining = target_interval - elapsed
                     if remaining > 0:
@@ -282,18 +270,15 @@ def save_screenshot():
         return jsonify({"error": "No frame available"}), 400
     
     try:
-        # Create screenshots directory if it doesn't exist
         import os
         screenshots_dir = "screenshots"
         if not os.path.exists(screenshots_dir):
             os.makedirs(screenshots_dir)
         
-        # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"vigilai_screenshot_{timestamp}.jpg"
         filepath = os.path.join(screenshots_dir, filename)
         
-        # Save the frame
         with open(filepath, 'wb') as f:
             f.write(latest_frame)
         
@@ -320,7 +305,7 @@ def start_evaluation():
     
     data = request.get_json()
     model_path = data.get('model_path', None)
-    evaluation_type = data.get('evaluation_type', 'standard')  # 'standard' or 'combined'
+    evaluation_type = data.get('evaluation_type', 'standard') 
     
     def run_evaluation():
         global system_status
@@ -331,11 +316,9 @@ def start_evaluation():
             vigilai_instance = VigilAI(model_path=model_path)
             
             if evaluation_type == 'combined':
-                # For combined models, evaluate on combined dataset
                 add_log("Evaluating on combined dataset...")
                 results = vigilai_instance.evaluate_combined_model()
             else:
-                # Standard evaluation on HackByte dataset
                 add_log("Evaluating on HackByte dataset...")
                 results = vigilai_instance.evaluate_model()
             
@@ -400,7 +383,7 @@ def get_dataset_status():
             "datasets": datasets,
             "available_count": available_count,
             "total_count": total_count,
-            "can_train_combined": available_count >= 2  # Need at least 2 datasets for combined training
+            "can_train_combined": available_count >= 2 
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -412,17 +395,14 @@ def get_model_info(model_path):
         from pathlib import Path
         import os
         
-        # Decode the model path
         model_path = model_path.replace('_', '/')
         
         if not os.path.exists(model_path):
             return jsonify({"error": "Model not found"}), 404
         
-        # Get model file size
         model_size = os.path.getsize(model_path)
         model_size_mb = model_size / (1024 * 1024)
         
-        # Determine model type based on path
         if 'combined' in model_path:
             model_type = "Combined (Multi-Dataset)"
             classes = ['FireExtinguisher', 'ToolBox', 'OxygenTank', 'fire', 'smoke', 'other', 'violence', 'non-violence']
@@ -430,10 +410,8 @@ def get_model_info(model_path):
             model_type = "Standard (HackByte)"
             classes = ['FireExtinguisher', 'ToolBox', 'OxygenTank']
         
-        # Get model modification time
         modified_time = os.path.getmtime(model_path)
         
-        # Try to get model parameters (this is an estimate)
         if 'yolov11n' in model_path or 'nano' in model_path:
             parameters = "2.6M"
             inference_speed = "1.2ms CPU"
@@ -475,10 +453,8 @@ def get_evaluation_results(model_path):
         import json
         import pandas as pd
         
-        # Decode the model path
         model_path = model_path.replace('_', '/')
         
-        # Look for evaluation results in the model's directory
         model_dir = Path(model_path).parent.parent
         results_file = model_dir / 'results.json'
         
@@ -502,10 +478,8 @@ def get_training_results(model_path):
         from pathlib import Path
         import pandas as pd
         
-        # Decode the model path
         model_path = model_path.replace('_', '/')
         
-        # Look for results.csv in the model's directory
         model_dir = Path(model_path).parent.parent
         results_csv = model_dir / 'results.csv'
         
@@ -515,7 +489,6 @@ def get_training_results(model_path):
                 "message": "Training results CSV file not found"
             }), 404
         
-        # Read the CSV file
         df = pd.read_csv(results_csv)
         
         if df.empty:
@@ -524,37 +497,30 @@ def get_training_results(model_path):
                 "message": "Training results CSV is empty"
             }), 404
         
-        # Get the last row (final epoch results)
         final_results = df.iloc[-1]
         
-        # Extract key metrics
         training_results = {
             "total_epochs": len(df),
             "final_epoch": int(final_results['epoch']),
             "training_time": final_results['time'],
             
-            # Training losses
             "train_box_loss": float(final_results['train/box_loss']),
             "train_cls_loss": float(final_results['train/cls_loss']),
             "train_dfl_loss": float(final_results['train/dfl_loss']),
             
-            # Validation losses
             "val_box_loss": float(final_results['val/box_loss']),
             "val_cls_loss": float(final_results['val/cls_loss']),
             "val_dfl_loss": float(final_results['val/dfl_loss']),
             
-            # Metrics
             "precision": float(final_results['metrics/precision(B)']),
             "recall": float(final_results['metrics/recall(B)']),
             "mAP50": float(final_results['metrics/mAP50(B)']),
             "mAP50_95": float(final_results['metrics/mAP50-95(B)']),
             
-            # Learning rates
             "lr_pg0": float(final_results['lr/pg0']),
             "lr_pg1": float(final_results['lr/pg1']),
             "lr_pg2": float(final_results['lr/pg2']),
             
-            # Historical data for charts
             "epoch_data": df.to_dict('records')
         }
         
