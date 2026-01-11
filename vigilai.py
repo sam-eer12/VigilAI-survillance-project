@@ -231,13 +231,13 @@ class VigilAI:
             print(f"Error loading model: {str(e)}")
             return False
     
-    def detect_objects(self, frame, conf_threshold=0.5):
+    def predict(self, frame, conf_threshold=0.5):
         """
-        Detect objects in a frame
+        Run inference and return detections without drawing
         """
         if self.model is None:
             print("Model not loaded!")
-            return frame, []
+            return []
         
         # Run inference
         results = self.model(frame, conf=conf_threshold, verbose=False)
@@ -256,25 +256,44 @@ class VigilAI:
                     
                     if class_id < len(self.class_names):
                         class_name = self.class_names[class_id]
-                        color = self.colors.get(class_name, (255, 255, 255))
-                        
-                        # Draw bounding box
-                        cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
-                        
-                        # Draw label
-                        label = f"{class_name}: {confidence:.2f}"
-                        label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
-                        cv2.rectangle(frame, (int(x1), int(y1) - label_size[1] - 10), 
-                                    (int(x1) + label_size[0], int(y1)), color, -1)
-                        cv2.putText(frame, label, (int(x1), int(y1) - 5), 
-                                  cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
                         
                         detections.append({
                             'class': class_name,
-                            'confidence': confidence,
+                            'confidence': float(confidence),
                             'bbox': [int(x1), int(y1), int(x2), int(y2)]
                         })
+        return detections
+
+    def draw_detections(self, frame, detections):
+        """
+        Draw detections on the frame
+        """
+        for detection in detections:
+            class_name = detection['class']
+            confidence = detection['confidence']
+            x1, y1, x2, y2 = detection['bbox']
+            
+            color = self.colors.get(class_name, (255, 255, 255))
+            
+            # Draw bounding box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            
+            # Draw label
+            label = f"{class_name}: {confidence:.2f}"
+            label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+            cv2.rectangle(frame, (x1, y1 - label_size[1] - 10), 
+                        (x1 + label_size[0], y1), color, -1)
+            cv2.putText(frame, label, (x1, y1 - 5), 
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         
+        return frame
+
+    def detect_objects(self, frame, conf_threshold=0.5):
+        """
+        Detect objects in a frame (Wrapper for backward compatibility)
+        """
+        detections = self.predict(frame, conf_threshold)
+        self.draw_detections(frame, detections)
         return frame, detections
     
     def live_detection(self, camera_index=0, model_path=None, conf_threshold=0.5):
@@ -290,7 +309,7 @@ class VigilAI:
                 return
         
         # Initialize camera
-        cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
+        cap = cv2.VideoCapture(camera_index)
         
         if not cap.isOpened():
             print(f"Error: Could not open camera {camera_index}")

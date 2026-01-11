@@ -149,6 +149,12 @@ def start_detection():
     
     def run_detection():
         global detection_running, system_status, latest_frame, video_capture
+        
+        inference_thread = None
+        latest_raw_frame = None
+        current_detections = []
+        frame_lock = threading.Lock()
+        
         try:
             detection_running = True
             system_status = "Detecting"
@@ -168,7 +174,7 @@ def start_detection():
                         vigilai_instance.model_path = str(latest_run / 'weights' / 'best.pt')
             
             if vigilai_instance.load_model():
-                video_capture = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
+                video_capture = cv2.VideoCapture(camera_index)
                 if not video_capture.isOpened():
                     add_log(f"Error: Could not open camera {camera_index}", "ERROR")
                     return
@@ -179,17 +185,50 @@ def start_detection():
                     video_capture.set(cv2.CAP_PROP_FPS, 60)
                 except Exception:
                     pass
+                
+                # Inference Thread Function
+                def inference_loop():
+                    nonlocal current_detections, latest_raw_frame
+                    while detection_running:
+                        frame_to_process = None
+                        with frame_lock:
+                            if latest_raw_frame is not None:
+                                frame_to_process = latest_raw_frame.copy()
+                        
+                        if frame_to_process is not None:
+                            try:
+                                # Run prediction (this is slow/blocking)
+                                detections = vigilai_instance.predict(frame_to_process, conf_threshold)
+                                
+                                # Update shared detections
+                                current_detections = detections
+                            except Exception as e:
+                                print(f"Inference error: {e}")
+                                time.sleep(0.01)
+                        else:
+                            time.sleep(0.005)
+
+                # Start Inference Thread
+                inference_thread = threading.Thread(target=inference_loop)
+                inference_thread.daemon = True
+                inference_thread.start()
 
                 target_interval = 1.0 / 60.0
 
                 while detection_running:
                     loop_start = time.perf_counter()
+                    
                     ret, frame = video_capture.read()
                     if not ret:
                         add_log("Error: Could not read frame from camera", "ERROR")
                         break
-
-                    annotated_frame, _ = vigilai_instance.detect_objects(frame, conf_threshold)
+                    
+                    # Update raw frame for inference thread
+                    with frame_lock:
+                        latest_raw_frame = frame
+                    
+                    # Draw latest known detections on current frame
+                    annotated_frame = vigilai_instance.draw_detections(frame, current_detections)
 
                     ok, buffer = cv2.imencode('.jpg', annotated_frame)
                     if ok:
